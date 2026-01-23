@@ -12,6 +12,7 @@ include/
 cache/
 lib/nvim/*
 lib/node_modules/*
+.wrangler/
 
 
 Thumbs.db
@@ -20,8 +21,10 @@ lazy-lock.json
 
 
 etc/dlv/config.yml
-
+etc/argocd/
+etc/opencode/
 etc/btop/
+etc/uv/
 etc/htop/
 etc/github-copilot/
 etc/gh/
