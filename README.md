@@ -1,4 +1,4 @@
-# Oh My Dotfiles
+# Dotfiles
 
 > [!TIP]
 > There isn’t a one-size-fits-all configuration file. You should explore dotfiles shared by others and continuously build your own personalized dotfile.
@@ -9,25 +9,30 @@
 
 ## Features
 - **out-of-the-box**
-- **no side effects**
-  - all operations happen in `~/.oh-my-dotfiles`
-  - deleting `~/.oh-my-dotfiles` will restore your environment.
+- **minimal side effects**
+  - most operations happen in `~/.oh-my-dotfiles`
+  - tmux config is symlinked to `~/.config/tmux/`
   - third-party binaries will be downloaded into `~/.oh-my-dotfiles/bin` or `~/.oh-my-dotfiles/deps` (See [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/index.html))
 - neovim
   - AI assistant ([copilot](https://github.com/github/copilot.vim))
-  - lsp + lsp-manager ([manson](https://github.com/williamboman/mason.nvim))
+  - lsp + lsp-manager ([mason](https://github.com/williamboman/mason.nvim))
   - plugin-manager ([lazy-nvim](https://github.com/folke/lazy.nvim))
   - notification-manager ([nvim-notify](https://github.com/rcarriga/nvim-notify))
   - code highlighting ([nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter))
   - shortcut key hint ([which-key](https://github.com/folke/which-key.nvim))
 - [batcat](https://github.com/sharkdp/bat)
 - [tmux](https://github.com/tmux/tmux)
-  - 256color
+  - True color (256color + RGB)
   - <kbd>CTRL + A</kbd> Prefix
-  - Mouse Enabled
+  - Mouse enabled
+  - Vim-style pane navigation (<kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd>) and resizing (<kbd>H</kbd><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd>)
+  - Intuitive split keys: <kbd>|</kbd> horizontal, <kbd>-</kbd> vertical
+  - Pane sync toggle (<kbd>e</kbd>)
+  - Vi copy mode with system clipboard integration
+  - Auto dark/light theme following macOS appearance
 - [fzf](https://github.com/junegunn/fzf)
 - [zoxide](https://github.com/ajeetdsouza/zoxide)
-- [zsh](https://www.zsh.org/) + [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) + [zsh-autosuggestion](https://github.com/zsh-users/zsh-autosuggestions)
+- [zsh](https://www.zsh.org/) + [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) + [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) + [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
 
 ## Get Started
 
@@ -39,17 +44,24 @@ rm -f ~/.zshrc
 2. Clone the latest repository
 ```sh
 rm -rf ~/.oh-my-dotfiles
-git clone https://github.com/Junyi-99/oh-my-dotfiles.git ~/.oh-my-dotfiles
+git clone https://github.com/Junyi-99/dotfiles.git ~/.oh-my-dotfiles
 echo "source ~/.oh-my-dotfiles/etc/zsh/zshenv" >> ~/.zshenv
 echo "source ~/.oh-my-dotfiles/etc/zsh/zshrc" >> ~/.zshrc
 ```
 
-3. Setting up SSH configs
+3. Set up tmux config
+```sh
+mkdir -p ~/.config/tmux
+ln -sf ~/.oh-my-dotfiles/etc/tmux/tmux.conf ~/.config/tmux/tmux.conf
+ln -sf ~/.oh-my-dotfiles/etc/tmux/apply-theme.sh ~/.config/tmux/apply-theme.sh
+```
+
+4. Setting up SSH configs
 ```sh
 echo "Include ~/.oh-my-dotfiles/etc/ssh/*.local" >> ~/.ssh/config
 ```
 
-4. Activate!
+5. Activate!
 ```sh
 source ~/.zshrc
 ```
