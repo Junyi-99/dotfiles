@@ -87,32 +87,12 @@ if ! command_exists pyenv; then
     fi
 fi
 
-export N_PREFIX="$USER_DEP_HOME/n"
-export PATH="$N_PREFIX/bin:$PATH"
-if ! command_exists n; then
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        curl -L https://bit.ly/n-install | bash
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install n
-    else
-        log_message "🚼 n not found, please install it"
-    fi
-fi
-
-
-if ! command_exists node; then
-    if ! command_exists n; then
-        log_message "🚼 node not found, please install it"
-    else
-        n install lts
-    fi
-fi
+# node is managed by nvm (lazy-loaded in ~/.zshrc)
 print_greetings
 
 
-# If you come from bash you might have to change your $PATH.
+# PATH: USER_BIN_HOME is already added in .xdg.sh, ~/.local/bin added below
 export PATH=$HOME/bin:/usr/local/bin:$PATH
-export PATH=~/.local/bin/:$PATH
 
 # 先尝试从历史记录中查找建议，如果找不到，再从补全引擎中查找。
 export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
@@ -187,7 +167,6 @@ zstyle ':omz:update' mode disabled  # disable automatic updates
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    git
     zsh-autosuggestions
     zsh-syntax-highlighting
 )
@@ -231,16 +210,14 @@ alias rm="rm -i -v"
 alias ga="gauth | awk -F ' ' 'NR==2 {print $3}'"
 alias vpn="sudo openfortivpn -v -c ~/.oh-my-dotfiles/etc/openfortivpn/config.conf.local"
 
-# source all .bash file in `completions``
-for file in ${XDG_CONFIG_HOME}/completions/*; do
-    source $file
-done
+# zoxide (replaces old bash completion that didn't work in zsh)
+command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
 echo ""
 echo "ZSH is ready for $(hostname) 🚀"
 echo ""
 
-export PATH="${USER_BIN_HOME}:${HOME}/.local/bin/:${PATH}"
+export PATH="${HOME}/.local/bin/:${PATH}"
 
 # pnpm
 export PNPM_HOME="${HOME}/.oh-my-dotfiles/data/pnpm"
@@ -252,5 +229,6 @@ esac
 
 # source ${HOME}/miniconda3/bin/activate
 
-eval "$(pyenv init - zsh)"
-eval "$(pyenv virtualenv-init -)"
+# pyenv is already initialized in .zprofile
+# eval "$(pyenv init - zsh)"
+# eval "$(pyenv virtualenv-init -)"
