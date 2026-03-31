@@ -1,4 +1,4 @@
-# ZSH Configuration (no oh-my-zsh) ========= BEGIN =======
+# ZSH Configuration ========= BEGIN =======
 
 if [ -z "$USER_BIN_HOME" ]; then
     log_message "USER_BIN_HOME is not set. Please check be sure you set the ~/.zshenv"
@@ -28,108 +28,25 @@ zstyle ':completion:*' menu select                          # 菜单选择
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # 大小写不敏感补全
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # 补全着色
 
-# Key bindings (emacs mode, same as oh-my-zsh default)
+# Key bindings (emacs mode)
 bindkey -e
 bindkey '^[[A' up-line-or-search      # Up arrow: history search
 bindkey '^[[B' down-line-or-search    # Down arrow: history search
 
-# --- Homebrew ---
-
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    export HOMEBREW_PREFIX="$USER_DEP_HOME/homebrew"
-    export HOMEBREW_REPOSITORY="$USER_DEP_HOME/homebrew"
-    export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
-    export HOMEBREW_NO_ANALYTICS=1
-
-    export PATH="$HOMEBREW_PREFIX/bin:$PATH"
-    export PATH="$HOMEBREW_PREFIX/sbin:$PATH"
-    export MANPATH="$HOMEBREW_PREFIX/share/man:$MANPATH"
-    export INFOPATH="$HOMEBREW_PREFIX/share/info:$INFOPATH"
-fi
-
-if command_exists brew; then
-    echo "\033[32m\033[0;39m  homebrew installed"
-else
-    log_message "Homebrew not found, please install it first"
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        mkdir -p $HOMEBREW_PREFIX >/dev/null 2>&1
-        curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C $HOMEBREW_PREFIX
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    else
-        log_message "🚼 homebrew not found, please install it"
-    fi
-fi
-
-# --- Neovim ---
-
-export NVIM="${USER_CONFIG_HOME}/bin/nvim"
-if ! command_exists nvim; then
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        mkdir -p "${USER_CONFIG_HOME}/tmp" >/dev/null
-        curl -fsSL https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz -o ${USER_CONFIG_HOME}/tmp/nvim.tar.gz
-        tar -xf ${USER_CONFIG_HOME}/tmp/nvim.tar.gz -C ${USER_CONFIG_HOME}/tmp
-        cp -r ${USER_CONFIG_HOME}/tmp/nvim-linux-x86_64/* ${USER_CONFIG_HOME}
-        rm -rf ${USER_CONFIG_HOME}/tmp/nvim*
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install neovim
-    else
-        log_message "🚼 nvim not found, please install it"
-    fi
-fi
-
-# --- Pyenv ---
-
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-if ! command_exists pyenv; then
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        curl https://pyenv.run | bash
-    elif [[ "$OSTYPE" == "darwin"* ]]; then
-        brew install pyenv
-    else
-        log_message "🚼 pyenv not found, please install it"
-    fi
-fi
+# --- PATH ---
+export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # node is managed by nvm (lazy-loaded in ~/.zshrc)
 print_greetings
 
-# --- PATH ---
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-
-# --- Plugins (direct source, no framework) ---
-
-# zsh-autosuggestions
-AUTOSUGGESTIONS_DIR="${USER_DEP_HOME}/zsh-autosuggestions"
-if [ ! -d "$AUTOSUGGESTIONS_DIR" ]; then
-    log_message "zsh-autosuggestions not found, installing ..."
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$AUTOSUGGESTIONS_DIR"
+# --- omd: install selected packages and source env ---
+if [ ! -f "${XDG_CONFIG_HOME}/omd/packages.conf" ]; then
+    echo ""
+    echo "  First run detected. Run 'omd' to select packages to install."
+    echo ""
 fi
-source "$AUTOSUGGESTIONS_DIR/zsh-autosuggestions.zsh"
-
-export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
-ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste)
-bindkey '^B' autosuggest-toggle
-
-# zsh-syntax-highlighting (must be sourced last)
-SYNTAX_HL_DIR="${USER_DEP_HOME}/zsh-syntax-highlighting"
-if [ ! -d "$SYNTAX_HL_DIR" ]; then
-    log_message "zsh-syntax-highlighting not found, installing ..."
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$SYNTAX_HL_DIR"
-fi
-source "$SYNTAX_HL_DIR/zsh-syntax-highlighting.zsh"
-
-# --- Starship prompt ---
-if ! command_exists starship; then
-    log_message "starship not found, installing ..."
-    if [[ "$OSTYPE" == "darwin"* ]] && command_exists brew; then
-        brew install starship
-    else
-        curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "${USER_BIN_HOME}"
-    fi
-fi
-command_exists starship && eval "$(starship init zsh)"
+command -v omd &>/dev/null && omd install --quiet
+[ -f "${XDG_CONFIG_HOME}/omd/env.sh" ] && source "${XDG_CONFIG_HOME}/omd/env.sh"
 
 # --- Aliases ---
 alias cp="cp -i -v"
@@ -137,9 +54,6 @@ alias mv="mv -i -v"
 alias rm="rm -i -v"
 alias ga="gauth | awk -F ' ' 'NR==2 {print $3}'"
 alias vpn="sudo openfortivpn -v -c ~/.oh-my-dotfiles/etc/openfortivpn/config.conf.local"
-
-# --- zoxide ---
-command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"
 
 echo ""
 echo "ZSH is ready for $(hostname) 🚀"

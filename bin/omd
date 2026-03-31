@@ -1,0 +1,532 @@
+#!/usr/bin/env python3
+"""omd — Oh My Dotfiles TUI Package Manager"""
+
+import curses
+import os
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+
+# --- Paths ---
+OMD_HOME = Path(os.environ.get("USER_CONFIG_HOME", Path.home() / ".oh-my-dotfiles"))
+CONF_DIR = OMD_HOME / "etc" / "omd"
+CONF_FILE = CONF_DIR / "packages.conf"
+ENV_FILE = CONF_DIR / "env.sh"
+DEP_DIR = OMD_HOME / "dep"
+BIN_DIR = OMD_HOME / "bin"
+
+
+# --- Package Registry ---
+@dataclass
+class Package:
+    id: str
+    name: str
+    desc: str
+    tab: str
+    category: str
+    presets: list = field(default_factory=list)
+    check_cmd: str = ""
+    install_cmds: dict = field(default_factory=dict)  # {"linux": [...], "darwin": [...]}
+    env_snippet: str = ""
+
+
+PACKAGES = [
+    # === Tab: Basics ===
+    # Shell
+    Package("zsh-autosuggestions", "zsh-autosuggestions", "Fish-like suggestions",
+            tab="Basics", category="Shell", presets=["minimal", "agent", "full"],
+            check_cmd=f"test -d {DEP_DIR}/zsh-autosuggestions",
+            install_cmds={"all": [f"git clone https://github.com/zsh-users/zsh-autosuggestions {DEP_DIR}/zsh-autosuggestions"]},
+            env_snippet=f"""
+# zsh-autosuggestions
+source "{DEP_DIR}/zsh-autosuggestions/zsh-autosuggestions.zsh"
+export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd completion)
+ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste)
+bindkey '^B' autosuggest-toggle
+"""),
+    Package("zsh-syntax-highlighting", "zsh-syntax-highlighting", "Command highlighting",
+            tab="Basics", category="Shell", presets=["minimal", "agent", "full"],
+            check_cmd=f"test -d {DEP_DIR}/zsh-syntax-highlighting",
+            install_cmds={"all": [f"git clone https://github.com/zsh-users/zsh-syntax-highlighting.git {DEP_DIR}/zsh-syntax-highlighting"]},
+            env_snippet=f"""
+# zsh-syntax-highlighting (should be sourced last among plugins)
+source "{DEP_DIR}/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+"""),
+
+    # Prompt
+    Package("starship", "Starship", "Cross-shell prompt",
+            tab="Basics", category="Prompt", presets=["full"],
+            check_cmd="command -v starship",
+            install_cmds={
+                "darwin": ["brew install starship"],
+                "linux": [f'curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "{BIN_DIR}"'],
+            },
+            env_snippet='eval "$(starship init zsh)"\n'),
+
+    # Package Managers
+    Package("homebrew", "Homebrew", "macOS/Linux package manager",
+            tab="Basics", category="Package Managers", presets=["full"],
+            check_cmd="command -v brew",
+            install_cmds={
+                "darwin": ['/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'],
+                "linux": [f'mkdir -p {OMD_HOME}/dep/homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C {OMD_HOME}/dep/homebrew'],
+            },
+            env_snippet=f"""
+# Homebrew
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    export HOMEBREW_PREFIX="{OMD_HOME}/dep/homebrew"
+    export HOMEBREW_REPOSITORY="{OMD_HOME}/dep/homebrew"
+    export HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
+    export HOMEBREW_NO_ANALYTICS=1
+    export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+fi
+"""),
+    Package("pyenv", "pyenv", "Python version manager",
+            tab="Basics", category="Package Managers", presets=["full"],
+            check_cmd="command -v pyenv",
+            install_cmds={
+                "darwin": ["brew install pyenv"],
+                "linux": ["curl https://pyenv.run | bash"],
+            },
+            env_snippet="""
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+"""),
+
+    # Tools
+    Package("neovim", "Neovim", "Terminal editor",
+            tab="Basics", category="Tools", presets=["full"],
+            check_cmd="command -v nvim",
+            install_cmds={
+                "darwin": ["brew install neovim"],
+                "linux": [
+                    f'mkdir -p "{OMD_HOME}/tmp"',
+                    f'curl -fsSL https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz -o "{OMD_HOME}/tmp/nvim.tar.gz"',
+                    f'tar -xf "{OMD_HOME}/tmp/nvim.tar.gz" -C "{OMD_HOME}/tmp"',
+                    f'cp -r "{OMD_HOME}/tmp/nvim-linux-x86_64/"* "{OMD_HOME}"',
+                    f'rm -rf "{OMD_HOME}/tmp/nvim"*',
+                ],
+            },
+            env_snippet=f'export NVIM="{OMD_HOME}/bin/nvim"\n'),
+    Package("fzf", "fzf", "Fuzzy finder",
+            tab="Basics", category="Tools", presets=["full"],
+            check_cmd="command -v fzf",
+            install_cmds={
+                "darwin": ["brew install fzf"],
+                "linux": ["brew install fzf"],
+            },
+            env_snippet=""),
+    Package("zoxide", "zoxide", "Smart cd",
+            tab="Basics", category="Tools", presets=["full"],
+            check_cmd="command -v zoxide",
+            install_cmds={
+                "darwin": ["brew install zoxide"],
+                "linux": ["brew install zoxide"],
+            },
+            env_snippet='command -v zoxide &>/dev/null && eval "$(zoxide init zsh)"\n'),
+    Package("batcat", "bat", "cat with syntax highlighting",
+            tab="Basics", category="Tools", presets=["full"],
+            check_cmd="command -v bat || command -v batcat",
+            install_cmds={
+                "darwin": ["brew install bat"],
+                "linux": ["brew install bat"],
+            },
+            env_snippet=""),
+    Package("duf", "duf", "Disk usage utility",
+            tab="Basics", category="Tools", presets=["full"],
+            check_cmd="command -v duf",
+            install_cmds={
+                "darwin": ["brew install duf"],
+                "linux": ["brew install duf"],
+            },
+            env_snippet=""),
+    Package("spack", "Spack", "HPC package manager",
+            tab="Basics", category="Tools", presets=[],
+            check_cmd="test -f $HOME/spack/share/spack/setup-env.sh",
+            install_cmds={"all": [
+                'git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git $HOME/spack',
+            ]},
+            env_snippet="""
+# Spack
+[ -f "$HOME/spack/share/spack/setup-env.sh" ] && source "$HOME/spack/share/spack/setup-env.sh"
+"""),
+
+    # === Tab: CLI Agents ===
+    Package("claude-code", "Claude Code", "Anthropic CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v claude",
+            install_cmds={"all": ["npm install -g @anthropic-ai/claude-code"]},
+            env_snippet=""),
+    Package("codex-cli", "OpenAI Codex CLI", "OpenAI CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v codex",
+            install_cmds={"all": ["npm install -g @openai/codex"]},
+            env_snippet=""),
+    Package("copilot-cli", "GitHub Copilot CLI", "GitHub CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v gh && gh extension list 2>/dev/null | grep -q copilot",
+            install_cmds={"all": ["gh extension install github/gh-copilot"]},
+            env_snippet=""),
+    Package("gemini-cli", "Gemini CLI", "Google CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v gemini",
+            install_cmds={"all": ["npm install -g @google/gemini-cli"]},
+            env_snippet=""),
+    Package("cursor-cli", "Cursor CLI", "Cursor CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v cursor",
+            install_cmds={"all": []},  # installed via Cursor app
+            env_snippet=""),
+    Package("kimi-code", "Kimi Code", "Moonshot CLI agent",
+            tab="CLI Agents", category="CLI Agents", presets=["agent", "full"],
+            check_cmd="command -v kimi",
+            install_cmds={"all": ["uv tool install kimi-cli"]},
+            env_snippet=""),
+]
+
+TABS = ["Basics", "CLI Agents", "Skills", "Plugins"]
+
+
+# --- Config I/O ---
+def load_config() -> dict:
+    """Load package selections from config file. Returns {id: bool}."""
+    config = {}
+    if CONF_FILE.exists():
+        for line in CONF_FILE.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                pkg_id, state = line.split("=", 1)
+                config[pkg_id.strip()] = state.strip() == "enabled"
+    return config
+
+
+def save_config(selections: dict):
+    """Save package selections to config file."""
+    CONF_DIR.mkdir(parents=True, exist_ok=True)
+    lines = ["# Generated by omd\n"]
+    for pkg in PACKAGES:
+        state = "enabled" if selections.get(pkg.id, False) else "disabled"
+        lines.append(f"{pkg.id}={state}\n")
+    CONF_FILE.write_text("".join(lines))
+
+
+def generate_env(selections: dict):
+    """Generate env.sh for enabled packages."""
+    CONF_DIR.mkdir(parents=True, exist_ok=True)
+    lines = ["# Generated by omd — do not edit\n"]
+    for pkg in PACKAGES:
+        if selections.get(pkg.id, False) and pkg.env_snippet:
+            lines.append(pkg.env_snippet)
+    ENV_FILE.write_text("".join(lines))
+
+
+# --- Installer ---
+def get_platform() -> str:
+    import platform
+    return "darwin" if platform.system() == "Darwin" else "linux"
+
+
+def is_installed(pkg: Package) -> bool:
+    if not pkg.check_cmd:
+        return True
+    return subprocess.run(pkg.check_cmd, shell=True, capture_output=True).returncode == 0
+
+
+def install_package(pkg: Package, quiet: bool = False) -> bool:
+    platform = get_platform()
+    cmds = pkg.install_cmds.get(platform, pkg.install_cmds.get("all", []))
+    if not cmds:
+        if not quiet:
+            print(f"  ⚠ {pkg.name}: no installer for {platform}, install manually")
+        return False
+    for cmd in cmds:
+        if not quiet:
+            print(f"  → {pkg.name}: {cmd}")
+        result = subprocess.run(cmd, shell=True, capture_output=quiet)
+        if result.returncode != 0:
+            if not quiet:
+                print(f"  ✗ {pkg.name}: install failed")
+            return False
+    return True
+
+
+def cmd_install(quiet: bool = False):
+    """Install enabled packages and generate env.sh."""
+    selections = load_config()
+    if not selections:
+        if not quiet:
+            print("No packages.conf found. Run 'omd' to select packages.")
+        return
+
+    newly_installed = 0
+    for pkg in PACKAGES:
+        if not selections.get(pkg.id, False):
+            continue
+        if is_installed(pkg):
+            continue
+        if not quiet:
+            print(f"  Installing {pkg.name}...")
+        if install_package(pkg, quiet):
+            newly_installed += 1
+
+    generate_env(selections)
+
+    if not quiet and newly_installed > 0:
+        print(f"\n  ✓ {newly_installed} package(s) newly installed")
+    elif not quiet:
+        print("  ✓ All selected packages are installed")
+
+
+# --- TUI ---
+class TUI:
+    def __init__(self, stdscr):
+        self.stdscr = stdscr
+        self.current_tab = 0
+        self.cursor = 0
+        self.selections = load_config()
+        # Default: if no config, enable minimal preset
+        if not self.selections:
+            self._apply_preset("minimal")
+
+        self._build_tab_items()
+
+        curses.curs_set(0)
+        curses.start_color()
+        curses.use_default_colors()
+        curses.init_pair(1, curses.COLOR_GREEN, -1)   # enabled
+        curses.init_pair(2, curses.COLOR_RED, -1)      # disabled
+        curses.init_pair(3, curses.COLOR_CYAN, -1)     # active tab
+        curses.init_pair(4, curses.COLOR_YELLOW, -1)   # preset key
+        curses.init_pair(5, curses.COLOR_WHITE, curses.COLOR_BLUE)  # cursor
+        curses.init_pair(6, curses.COLOR_WHITE, -1)    # dimmed
+
+    def _build_tab_items(self):
+        """Build ordered list of items (categories + packages) for each tab."""
+        self.tab_items = {}
+        for tab in TABS:
+            items = []
+            seen_cats = []
+            tab_pkgs = [p for p in PACKAGES if p.tab == tab]
+            for pkg in tab_pkgs:
+                if pkg.category not in seen_cats:
+                    seen_cats.append(pkg.category)
+                    items.append(("category", pkg.category))
+                items.append(("package", pkg))
+            self.tab_items[tab] = items
+        self.cursor = 0
+        self._skip_to_package()
+
+    def _skip_to_package(self):
+        """Ensure cursor is on a package, not a category header."""
+        items = self.tab_items.get(TABS[self.current_tab], [])
+        if not items:
+            return
+        while self.cursor < len(items) and items[self.cursor][0] == "category":
+            self.cursor += 1
+        if self.cursor >= len(items):
+            self.cursor = 0
+            while self.cursor < len(items) and items[self.cursor][0] == "category":
+                self.cursor += 1
+
+    def _apply_preset(self, preset: str):
+        for pkg in PACKAGES:
+            self.selections[pkg.id] = preset in pkg.presets
+
+    def _toggle_all(self):
+        tab = TABS[self.current_tab]
+        tab_pkgs = [p for p in PACKAGES if p.tab == tab]
+        all_on = all(self.selections.get(p.id, False) for p in tab_pkgs)
+        for p in tab_pkgs:
+            self.selections[p.id] = not all_on
+
+    def _count_enabled(self, tab: str) -> tuple:
+        tab_pkgs = [p for p in PACKAGES if p.tab == tab]
+        enabled = sum(1 for p in tab_pkgs if self.selections.get(p.id, False))
+        return enabled, len(tab_pkgs)
+
+    def draw(self):
+        self.stdscr.erase()
+        h, w = self.stdscr.getmaxyx()
+        if h < 15 or w < 50:
+            self.stdscr.addstr(0, 0, "Terminal too small (need 50x15)")
+            self.stdscr.refresh()
+            return
+
+        row = 0
+
+        # Title
+        title = " omd — Oh My Dotfiles "
+        self.stdscr.addstr(row, 0, title, curses.A_BOLD)
+        row += 1
+        self.stdscr.addstr(row, 0, "━" * min(w - 1, 60))
+        row += 1
+
+        # Tabs
+        col = 0
+        for i, tab in enumerate(TABS):
+            en, total = self._count_enabled(tab)
+            label = f" {i+1} {tab} ({en}/{total}) "
+            if i == self.current_tab:
+                self.stdscr.addstr(row, col, label, curses.color_pair(3) | curses.A_BOLD)
+            else:
+                self.stdscr.addstr(row, col, label, curses.color_pair(6))
+            col += len(label) + 1
+        row += 1
+        self.stdscr.addstr(row, 0, "━" * min(w - 1, 60))
+        row += 1
+
+        # Presets
+        self.stdscr.addstr(row, 0, "  Presets: ", curses.A_DIM)
+        for key, name in [("m", "minimal"), ("g", "agent"), ("f", "full")]:
+            self.stdscr.addstr(f" (", curses.A_DIM)
+            self.stdscr.addstr(key, curses.color_pair(4) | curses.A_BOLD)
+            self.stdscr.addstr(f"){name}", curses.A_DIM)
+        row += 2
+
+        # Items
+        items = self.tab_items.get(TABS[self.current_tab], [])
+        if not items:
+            self.stdscr.addstr(row, 2, "(empty — coming soon)", curses.A_DIM)
+            row += 1
+        else:
+            max_name_len = max((len(p.name) for _, p in items if _ == "package"), default=20)
+            for i, (kind, val) in enumerate(items):
+                if row >= h - 2:
+                    break
+                if kind == "category":
+                    if i > 0:
+                        row += 1
+                    self.stdscr.addstr(row, 2, val, curses.A_BOLD | curses.A_UNDERLINE)
+                    row += 1
+                else:
+                    pkg = val
+                    checked = self.selections.get(pkg.id, False)
+                    marker = "x" if checked else " "
+                    color = curses.color_pair(1) if checked else curses.color_pair(2)
+                    is_cursor = i == self.cursor
+
+                    prefix = " ▸ " if is_cursor else "   "
+                    checkbox = f"[{marker}]"
+                    name_str = f" {pkg.name:<{max_name_len}}  "
+                    desc_str = pkg.desc
+
+                    attr = curses.color_pair(5) | curses.A_BOLD if is_cursor else 0
+
+                    self.stdscr.addstr(row, 0, prefix, attr)
+                    self.stdscr.addstr(checkbox, color | (curses.A_BOLD if is_cursor else 0))
+                    self.stdscr.addstr(name_str, attr if is_cursor else curses.A_BOLD)
+                    remaining = w - len(prefix) - len(checkbox) - len(name_str) - 1
+                    if remaining > 0:
+                        self.stdscr.addstr(desc_str[:remaining], curses.A_DIM)
+                    row += 1
+
+        # Footer
+        footer_row = h - 1
+        footer = " ↑↓/jk Navigate  Space Toggle  a All  Tab Next  Enter Install  q Quit "
+        self.stdscr.addstr(footer_row, 0, footer[:w-1], curses.A_REVERSE)
+
+        self.stdscr.refresh()
+
+    def run(self) -> bool:
+        """Run TUI. Returns True if user confirmed (Enter), False if quit (q)."""
+        while True:
+            self.draw()
+            key = self.stdscr.getch()
+            items = self.tab_items.get(TABS[self.current_tab], [])
+
+            if key in (ord("q"), ord("Q"), 27):  # q or Escape
+                return False
+
+            elif key == ord("\n"):  # Enter
+                return True
+
+            elif key in (curses.KEY_UP, ord("k")):
+                if items:
+                    self.cursor -= 1
+                    if self.cursor < 0:
+                        self.cursor = len(items) - 1
+                    while items[self.cursor][0] == "category":
+                        self.cursor -= 1
+                        if self.cursor < 0:
+                            self.cursor = len(items) - 1
+
+            elif key in (curses.KEY_DOWN, ord("j")):
+                if items:
+                    self.cursor += 1
+                    if self.cursor >= len(items):
+                        self.cursor = 0
+                    while items[self.cursor][0] == "category":
+                        self.cursor += 1
+                        if self.cursor >= len(items):
+                            self.cursor = 0
+
+            elif key == ord(" "):  # Space: toggle
+                if items and items[self.cursor][0] == "package":
+                    pkg = items[self.cursor][1]
+                    self.selections[pkg.id] = not self.selections.get(pkg.id, False)
+
+            elif key == ord("a"):  # Toggle all in current tab
+                self._toggle_all()
+
+            elif key in (ord("\t"), curses.KEY_RIGHT, ord("l")):  # Tab / Right: next tab
+                self.current_tab = (self.current_tab + 1) % len(TABS)
+                self.cursor = 0
+                self._skip_to_package()
+
+            elif key in (curses.KEY_BTAB, curses.KEY_LEFT, ord("h")):  # Shift-Tab / Left: prev tab
+                self.current_tab = (self.current_tab - 1) % len(TABS)
+                self.cursor = 0
+                self._skip_to_package()
+
+            elif key == ord("m"):
+                self._apply_preset("minimal")
+            elif key == ord("g"):
+                self._apply_preset("agent")
+            elif key == ord("f"):
+                self._apply_preset("full")
+
+            elif key in (ord("1"), ord("2"), ord("3"), ord("4")):
+                idx = key - ord("1")
+                if idx < len(TABS):
+                    self.current_tab = idx
+                    self.cursor = 0
+                    self._skip_to_package()
+
+
+def tui_main(stdscr) -> bool:
+    tui = TUI(stdscr)
+    return tui.run()
+
+
+def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "install":
+        quiet = "--quiet" in sys.argv
+        cmd_install(quiet)
+        return
+
+    selections = {}
+
+    def run_tui(stdscr):
+        nonlocal selections
+        tui = TUI(stdscr)
+        if tui.run():
+            selections = dict(tui.selections)
+            return True
+        return False
+
+    confirmed = curses.wrapper(run_tui)
+
+    if confirmed and selections:
+        save_config(selections)
+        generate_env(selections)
+        total = sum(1 for v in selections.values() if v)
+        print(f"\n  ✓ Saved {total} package(s) to {CONF_FILE}")
+        print(f"  Run 'omd install' to install, or restart your shell.\n")
+    else:
+        print("  Cancelled.\n")
+
+
+if __name__ == "__main__":
+    main()
