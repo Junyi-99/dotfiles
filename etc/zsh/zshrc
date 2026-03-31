@@ -67,9 +67,10 @@ export NVIM="${USER_CONFIG_HOME}/bin/nvim"
 if ! command_exists nvim; then
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         mkdir -p "${USER_CONFIG_HOME}/tmp" >/dev/null
-        wget https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz -O ${USER_CONFIG_HOME}/tmp/nvim.tar.gz
+        curl -fsSL https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz -o ${USER_CONFIG_HOME}/tmp/nvim.tar.gz
         tar -xf ${USER_CONFIG_HOME}/tmp/nvim.tar.gz -C ${USER_CONFIG_HOME}/tmp
         cp -r ${USER_CONFIG_HOME}/tmp/nvim-linux-x86_64/* ${USER_CONFIG_HOME}
+        rm -rf ${USER_CONFIG_HOME}/tmp/nvim*
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         brew install neovim
     else
@@ -120,11 +121,15 @@ fi
 source "$SYNTAX_HL_DIR/zsh-syntax-highlighting.zsh"
 
 # --- Starship prompt ---
-if command_exists starship; then
-    eval "$(starship init zsh)"
-else
-    log_message "starship not found, install with: brew install starship / cargo install starship"
+if ! command_exists starship; then
+    log_message "starship not found, installing ..."
+    if [[ "$OSTYPE" == "darwin"* ]] && command_exists brew; then
+        brew install starship
+    else
+        curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "${USER_BIN_HOME}"
+    fi
 fi
+command_exists starship && eval "$(starship init zsh)"
 
 # --- Aliases ---
 alias cp="cp -i -v"
