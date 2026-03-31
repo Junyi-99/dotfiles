@@ -66,7 +66,7 @@ function print_greetings() {
             : # pass
         fi
     else
-        echo "Hi there!"
+        : # fortune not installed, skip greeting
     fi
 }
 

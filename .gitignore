@@ -30,6 +30,11 @@ etc/github-copilot/
 etc/gh/
 etc/lazygit/state.yml
 etc/k9s
+etc/iterm2/
+etc/nvm/
+etc/swiftpm/
+etc/.copilot/
+etc/configstore/
 etc/crossnote
 
 Desktop.ini
