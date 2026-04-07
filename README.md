@@ -49,12 +49,9 @@ echo "source ~/.oh-my-dotfiles/etc/zsh/zshenv" >> ~/.zshenv
 echo "source ~/.oh-my-dotfiles/etc/zsh/zshrc" >> ~/.zshrc
 ```
 
-3. Set up tmux config
-```sh
-mkdir -p ~/.config/tmux
-ln -sf ~/.oh-my-dotfiles/etc/tmux/tmux.conf ~/.config/tmux/tmux.conf
-ln -sf ~/.oh-my-dotfiles/etc/tmux/apply-theme.sh ~/.config/tmux/apply-theme.sh
-```
+3. tmux config
+
+tmux 会自动读取 `$XDG_CONFIG_HOME/tmux/tmux.conf`，无需额外操作。
 
 4. Setting up SSH configs
 ```sh
