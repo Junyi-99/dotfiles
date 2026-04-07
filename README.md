@@ -11,7 +11,7 @@
 - **out-of-the-box**
 - **minimal side effects**
   - most operations happen in `~/.oh-my-dotfiles`
-  - tmux config is symlinked to `~/.config/tmux/`
+  - `XDG_CONFIG_HOME` is set to `~/.oh-my-dotfiles/etc/`, so XDG-aware tools (tmux, neovim, etc.) read configs directly from the repo
   - third-party binaries will be downloaded into `~/.oh-my-dotfiles/bin` or `~/.oh-my-dotfiles/deps` (See [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/index.html))
 - neovim
   - AI assistant ([copilot](https://github.com/github/copilot.vim))
@@ -27,12 +27,15 @@
   - Mouse enabled
   - Vim-style pane navigation (<kbd>h</kbd><kbd>j</kbd><kbd>k</kbd><kbd>l</kbd>) and resizing (<kbd>H</kbd><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd>)
   - Intuitive split keys: <kbd>|</kbd> horizontal, <kbd>-</kbd> vertical
-  - Pane sync toggle (<kbd>e</kbd>)
-  - Vi copy mode with system clipboard integration
-  - Auto dark/light theme following macOS appearance
+  - <kbd>Alt + Arrow</kbd> switch panes, <kbd>Shift + Arrow</kbd> switch windows (no prefix needed)
+  - Right-click context menus for pane/window/session management
+  - Pane sync toggle (<kbd>S</kbd>), SYNC/ZOOM status indicators
+  - Vi copy mode with <kbd>C-v</kbd> rectangle selection
+  - Auto dark/light theme following macOS appearance (Tokyo Night)
+  - Cheatsheet on new session
 - [fzf](https://github.com/junegunn/fzf)
 - [zoxide](https://github.com/ajeetdsouza/zoxide)
-- [zsh](https://www.zsh.org/) + [oh-my-zsh](https://github.com/ohmyzsh/ohmyzsh) + [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) + [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
+- [zsh](https://www.zsh.org/) + [starship](https://starship.rs/) + [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions) + [zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)
 
 ## Get Started
 
@@ -49,16 +52,12 @@ echo "source ~/.oh-my-dotfiles/etc/zsh/zshenv" >> ~/.zshenv
 echo "source ~/.oh-my-dotfiles/etc/zsh/zshrc" >> ~/.zshrc
 ```
 
-3. tmux config
-
-tmux 会自动读取 `$XDG_CONFIG_HOME/tmux/tmux.conf`，无需额外操作。
-
-4. Setting up SSH configs
+3. Setting up SSH configs
 ```sh
 echo "Include ~/.oh-my-dotfiles/etc/ssh/*.local" >> ~/.ssh/config
 ```
 
-5. Activate!
+4. Activate!
 ```sh
 source ~/.zshrc
 ```
