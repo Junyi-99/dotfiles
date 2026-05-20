@@ -305,6 +305,80 @@ def cmd_install(quiet: bool = False):
         print("  ✓ All selected packages are installed")
 
 
+def cmd_update(force: bool = False) -> int:
+    """Sync the dotfiles repo with origin/<current branch>, then reinstall.
+
+    Refuses to clobber local work unless --force is passed:
+    - working tree must be clean (no unstaged / staged changes)
+    - branch must not be ahead of upstream
+    Always uses --ff-only so a divergent history forces explicit resolution.
+    """
+    def git(*args, check=True):
+        return subprocess.run(
+            ["git", "-C", str(OMD_HOME), *args],
+            capture_output=True, text=True, check=check,
+        )
+
+    if not (OMD_HOME / ".git").exists():
+        print(f"  ✗ {OMD_HOME} is not a git repo")
+        return 1
+
+    branch = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    upstream = git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}",
+                   check=False)
+    if upstream.returncode != 0:
+        print(f"  ✗ branch '{branch}' has no upstream configured")
+        return 1
+    upstream = upstream.stdout.strip()
+
+    print(f"  Fetching {upstream}...")
+    fetch = git("fetch", "--quiet", "origin", check=False)
+    if fetch.returncode != 0:
+        print(f"  ✗ git fetch failed: {fetch.stderr.strip()}")
+        return 1
+
+    dirty = git("status", "--porcelain").stdout.strip()
+    ahead = git("rev-list", "--count", f"{upstream}..HEAD").stdout.strip()
+    behind = git("rev-list", "--count", f"HEAD..{upstream}").stdout.strip()
+
+    if behind == "0":
+        print(f"  ✓ already up-to-date with {upstream}")
+        # Still re-run install so env.sh stays in sync with packages.conf.
+        cmd_install(quiet=True)
+        return 0
+
+    if dirty and not force:
+        print(f"  ✗ working tree has uncommitted changes:\n{dirty}")
+        print("    commit/stash them first, or re-run with --force to discard")
+        return 1
+    if int(ahead) > 0 and not force:
+        print(f"  ✗ local branch is ahead of {upstream} by {ahead} commit(s)")
+        print(f"    push them first, or re-run with --force to drop them")
+        return 1
+
+    if force and dirty:
+        print("  ! --force: discarding local changes")
+        git("reset", "--hard", "HEAD")
+    if force and int(ahead) > 0:
+        print(f"  ! --force: resetting to {upstream}")
+        git("reset", "--hard", upstream)
+        # After hard-reset there's nothing left to pull.
+        print(f"  ✓ synced to {upstream} ({behind} commit(s) behind before)")
+        cmd_install(quiet=True)
+        return 0
+
+    print(f"  Pulling {behind} commit(s) from {upstream}...")
+    pull = git("pull", "--ff-only", "--quiet", check=False)
+    if pull.returncode != 0:
+        print(f"  ✗ git pull --ff-only failed: {pull.stderr.strip()}")
+        print(f"    branches have diverged — resolve manually")
+        return 1
+
+    print(f"  ✓ updated to {upstream}")
+    cmd_install(quiet=True)
+    return 0
+
+
 # --- TUI ---
 class TUI:
     def __init__(self, stdscr):
@@ -534,6 +608,16 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "install":
         quiet = "--quiet" in sys.argv
         cmd_install(quiet)
+        return
+
+    if len(sys.argv) > 1 and sys.argv[1] == "update":
+        force = "--force" in sys.argv or "-f" in sys.argv
+        sys.exit(cmd_update(force))
+
+    if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help", "help"):
+        print("Usage: omd                  # launch package selection TUI")
+        print("       omd install [--quiet]  # install selected packages")
+        print("       omd update [--force]   # sync dotfiles repo with origin")
         return
 
     selections = {}
