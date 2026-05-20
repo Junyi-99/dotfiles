@@ -23,7 +23,14 @@ setopt PUSHD_IGNORE_DUPS
 
 # Completion system
 autoload -Uz compinit
-compinit
+# Cached compinit: only run the slow security audit once per day.
+_zcompdump="${XDG_CACHE_HOME:-$HOME/.cache}/zcompdump"
+if [[ -n "$_zcompdump"(#qN.mh+24) ]] || [[ ! -f "$_zcompdump" ]]; then
+    compinit -d "$_zcompdump"
+else
+    compinit -C -d "$_zcompdump"
+fi
+unset _zcompdump
 zstyle ':completion:*' menu select                          # 菜单选择
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # 大小写不敏感补全
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # 补全着色
@@ -45,7 +52,12 @@ if [ ! -f "${XDG_CONFIG_HOME}/omd/packages.conf" ]; then
     echo "  First run detected. Run 'omd' to select packages to install."
     echo ""
 fi
-command -v omd &>/dev/null && omd install --quiet
+# Run `omd install` at most once per day (forking a subprocess every shell is slow).
+_omd_stamp="${XDG_CACHE_HOME:-$HOME/.cache}/omd-installed"
+if command -v omd &>/dev/null && [[ -z "$_omd_stamp"(#qN.mh-24) ]]; then
+    omd install --quiet && touch "$_omd_stamp"
+fi
+unset _omd_stamp
 [ -f "${XDG_CONFIG_HOME}/omd/env.sh" ] && source "${XDG_CONFIG_HOME}/omd/env.sh"
 
 # --- Aliases ---
