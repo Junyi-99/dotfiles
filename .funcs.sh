@@ -43,13 +43,11 @@ extract() {
 }
 
 function update_junyi() {
-    # update the config
-    pushd $USER_CONFIG_HOME || exit
-    log_message "Updating the config ..."
-    git checkout .
-    git pull
-    log_message "Finished updating the config"
-    popd || exit
+    # Delegate to `omd update`, which:
+    #   - refuses to clobber uncommitted changes or unpushed commits
+    #   - ff-only pull, then re-runs `omd install --quiet`
+    # Pass --force to fall back to the old behavior (hard reset).
+    omd update "$@"
 }
 
 function print_greetings() {
