@@ -1,0 +1,32 @@
+# brew install hudochenkov/sshpass/sshpass
+# apt install sshpass
+
+# ansible soc-cluster -m ping -i hosts.yaml --ask-vault-pass
+
+soc-cluster:
+
+  hosts:
+    xlog[0:2].comp.nus.edu.sg:
+      ansible_user: houjunyi
+      ansible_port: 22
+      # ansible_password: !vault |
+      #   $ANSIBLE_VAULT;1.1;AES256
+      #   30626365633439363535613163303631306633643438363233353039326139323137376264663538
+      #   6563373039613135383532353464326231323533323037640a343836636664376461613439613336
+      #   64386438643962613530363332393736316339386662623266383130313866306639313934366161
+      #   6661616361323763610a303133346636393334353563353264363430386264656161616430353839
+      #   34363366653266323234306334323839323630306364656265633463323038356132
+
+# raw command shell 的区别 https://www.unixarena.com/2018/07/ansible-command-vs-shell-vs-raw-modules.html/
+# ansible -i etc/ansible/hosts.yaml nus-xtra -m raw -a "uname -a" # can be used without python
+# ansible -i etc/ansible/hosts.yaml nus-xtra -m command -a "uname -a" # used with python (can't use pipe)
+# ansible -i etc/ansible/hosts.yaml nus-xtra -m shell -a "w | grep junyi" # used with python (can use pipe)
+
+# 使用 ping 检查 ansible 节点的连通性
+# ansible -i etc/ansible/hosts.yaml nus-xtra -m ping
+
+# Ansible 在一些机器成功，在一些机器失败怎么办
+
+
+
+# ansible-galaxy collection install prometheus.prometheus

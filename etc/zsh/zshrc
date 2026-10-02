@@ -1,0 +1,81 @@
+# ZSH Configuration ========= BEGIN =======
+
+if [ -z "$USER_BIN_HOME" ]; then
+    echo "USER_BIN_HOME is not set. Make sure ~/.zshenv sources ~/.oh-my-dotfiles/etc/zsh/zshenv" >&2
+    return 1
+fi
+
+# --- Basic ZSH settings ---
+
+# History
+HISTSIZE=10000
+SAVEHIST=10000
+HISTFILE=$USER_CONFIG_HOME/.history
+setopt HIST_IGNORE_DUPS      # 不记录重复命令
+setopt HIST_IGNORE_SPACE     # 空格开头的命令不记录
+setopt SHARE_HISTORY         # 多终端共享历史
+setopt APPEND_HISTORY        # 追加而非覆盖
+
+# Directory navigation
+setopt AUTO_CD               # 输入目录名直接 cd
+setopt AUTO_PUSHD            # cd 自动 pushd
+setopt PUSHD_IGNORE_DUPS
+
+# Completion system
+autoload -Uz compinit
+# Cached compinit: only run the slow security audit once per day.
+_zcompdump="${XDG_CACHE_HOME:-$HOME/.cache}/zcompdump"
+if [[ -n "$_zcompdump"(#qN.mh+24) ]] || [[ ! -f "$_zcompdump" ]]; then
+    compinit -d "$_zcompdump"
+else
+    compinit -C -d "$_zcompdump"
+fi
+unset _zcompdump
+zstyle ':completion:*' menu select                          # 菜单选择
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # 大小写不敏感补全
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"     # 补全着色
+
+# Key bindings (emacs mode)
+bindkey -e
+bindkey '^[[A' up-line-or-search      # Up arrow: history search
+bindkey '^[[B' down-line-or-search    # Down arrow: history search
+
+# --- PATH ---
+export PATH=$HOME/bin:/usr/local/bin:$PATH
+
+# node is managed by nvm (lazy-loaded in ~/.zshrc)
+
+# --- omd: load the generated environment; install explicitly with `omd` ---
+if [ ! -f "${XDG_CONFIG_HOME}/omd/packages.conf" ]; then
+    echo "Run 'omd' to select and install your tools."
+fi
+[ -f "${XDG_CONFIG_HOME}/omd/env.sh" ] && source "${XDG_CONFIG_HOME}/omd/env.sh"
+
+# After env.sh, so tools installed by omd (e.g. via Homebrew) are on PATH.
+print_greetings
+
+# Check for dotfiles updates in the background at the configured interval.
+if [ -f "${XDG_CONFIG_HOME}/omd/packages.conf" ] && command -v omd >/dev/null 2>&1; then
+    omd auto-update </dev/null >/dev/null 2>&1 &!
+fi
+
+# --- Claude Code ---
+export CLAUDE_CODE_NO_FLICKER=1
+
+# --- Aliases ---
+alias claude="claude --dangerously-skip-permissions"
+alias codex="codex --yolo"
+
+# Reload OMD's generated shell integration after saving or installing selections.
+omd() {
+    command omd "$@"
+    local omd_status=$?
+    if (( $# == 0 )) || [[ "$1" == "install" || "$1" == "env" ]]; then
+        [ -f "${XDG_CONFIG_HOME}/omd/env.sh" ] && source "${XDG_CONFIG_HOME}/omd/env.sh"
+    fi
+    return $omd_status
+}
+
+echo ""
+echo "ZSH is ready for $(hostname) 🚀"
+echo ""
