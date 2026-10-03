@@ -31,9 +31,7 @@ set number
 set nowrap
 set tabstop=4
 set cursorline
-set mousemoveevent
 
-set tabstop=4
 set shiftwidth=4
 set expandtab
 

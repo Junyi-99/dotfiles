@@ -14,7 +14,7 @@
   - `XDG_CONFIG_HOME` is set to `~/.oh-my-dotfiles/etc/`, so XDG-aware tools (tmux, neovim, etc.) read configs directly from the repo
   - third-party binaries will be downloaded into `~/.oh-my-dotfiles/bin` or `~/.oh-my-dotfiles/deps` (See [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/index.html))
 - neovim
-  - AI assistant ([copilot](https://github.com/github/copilot.vim))
+  - AI assistant ([copilot.lua](https://github.com/zbirenbaum/copilot.lua))
   - lsp + lsp-manager ([mason](https://github.com/williamboman/mason.nvim))
   - plugin-manager ([lazy-nvim](https://github.com/folke/lazy.nvim))
   - notification-manager ([nvim-notify](https://github.com/rcarriga/nvim-notify))
