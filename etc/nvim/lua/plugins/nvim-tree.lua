@@ -8,7 +8,7 @@ local function on_attach(bufnr)
             buffer = bufnr,
             noremap = true,
             silent = true,
-            nowait = true
+            nowait = true,
         }
     end
 
@@ -82,20 +82,23 @@ end
 vim.api.nvim_create_autocmd("BufEnter", {
     nested = true,
     callback = function()
-        if #vim.api.nvim_list_wins() == 1 and vim.api.nvim_buf_get_name(0):match("NvimTree_") ~= nil and
-            is_modified_buffer_open(vim.fn.getbufinfo({
-                bufmodified = 1
-            })) == false then
+        if
+            #vim.api.nvim_list_wins() == 1
+            and vim.api.nvim_buf_get_name(0):match("NvimTree_") ~= nil
+            and is_modified_buffer_open(vim.fn.getbufinfo({
+                bufmodified = 1,
+            })) == false
+        then
             vim.cmd("quit")
         end
-    end
+    end,
 })
 
 return {
     "nvim-tree/nvim-tree.lua",
     version = "*",
     lazy = false,
-    dependencies = {"nvim-tree/nvim-web-devicons"},
+    dependencies = { "nvim-tree/nvim-web-devicons" },
     config = function()
         local status_ok, nvim_tree = pcall(require, "nvim-tree")
         if not status_ok then
@@ -111,26 +114,26 @@ return {
                 centralize_selection = true,
                 number = true, -- 行号是否显示
                 relativenumber = true, -- 相对于当前行的行号
-                signcolumn = "yes" -- 显示图标
+                signcolumn = "yes", -- 显示图标
             },
             renderer = {
                 group_empty = true,
                 highlight_git = true,
-                highlight_opened_files = "all"
+                highlight_opened_files = "all",
             },
             update_focused_file = {
-                enable = true
+                enable = true,
             },
 
             diagnostics = {
                 enable = true,
-                show_on_dirs = true
+                show_on_dirs = true,
             },
             actions = {
                 change_dir = {
-                    enable = false
-                }
-            }
+                    enable = false,
+                },
+            },
         })
-    end
+    end,
 }

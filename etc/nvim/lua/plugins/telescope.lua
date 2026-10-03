@@ -4,6 +4,6 @@
 -- :Telescope buffers
 -- :Telescope help_tags
 return {
-    'nvim-telescope/telescope.nvim',
-    tag = '0.1.6'
+    "nvim-telescope/telescope.nvim",
+    tag = "0.1.6",
 }

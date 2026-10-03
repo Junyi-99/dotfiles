@@ -8,6 +8,6 @@ return {
             flavour = "mocha",
         })
 
-        vim.cmd.colorscheme "catppuccin"
-    end
+        vim.cmd.colorscheme("catppuccin")
+    end,
 }

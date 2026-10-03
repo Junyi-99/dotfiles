@@ -1,34 +1,33 @@
 local M = {
-    init = false
+    init = false,
 }
 
-local status = 'Unknown'
+local status = "Unknown"
 local setup = function()
-    local api = require('copilot.api')
+    local api = require("copilot.api")
     api.register_status_notification_handler(function(data)
         -- customize your message however you want
-        if data.status == 'Normal' then
-            status = 'Ready'
-        elseif data.status == 'InProgress' then
-            status = 'Pending'
+        if data.status == "Normal" then
+            status = "Ready"
+        elseif data.status == "InProgress" then
+            status = "Pending"
         else
             if data.status ~= "" and data.status ~= nil then
                 status = data.status -- might never actually be nil but just in case
             else
-                status = 'Offline'
+                status = "Offline"
             end
         end
 
-        if status == 'Ready' then
-            status = ''
-        elseif status == 'Pending' then
-            status = ''
-        elseif status == 'Offline' then
-            status = ''
+        if status == "Ready" then
+            status = ""
+        elseif status == "Pending" then
+            status = ""
+        elseif status == "Offline" then
+            status = ""
         else
-            status = 'Copilot: Unknown'
+            status = "Copilot: Unknown"
         end
-
     end)
 end
 

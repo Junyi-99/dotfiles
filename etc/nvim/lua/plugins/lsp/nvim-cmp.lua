@@ -1,9 +1,18 @@
 return {
     "hrsh7th/nvim-cmp",
-    dependencies = {"neovim/nvim-lspconfig", "hrsh7th/cmp-nvim-lsp", "hrsh7th/cmp-buffer", "hrsh7th/cmp-path",
-                    "hrsh7th/cmp-cmdline", -- For luasnip users.
-    "L3MON4D3/LuaSnip", "saadparwaiz1/cmp_luasnip", "hrsh7th/cmp-calc", "onsails/lspkind-nvim", "windwp/nvim-autopairs"},
-    event = {"InsertEnter", "CmdlineEnter"},
+    dependencies = {
+        "neovim/nvim-lspconfig",
+        "hrsh7th/cmp-nvim-lsp",
+        "hrsh7th/cmp-buffer",
+        "hrsh7th/cmp-path",
+        "hrsh7th/cmp-cmdline", -- For luasnip users.
+        "L3MON4D3/LuaSnip",
+        "saadparwaiz1/cmp_luasnip",
+        "hrsh7th/cmp-calc",
+        "onsails/lspkind-nvim",
+        "windwp/nvim-autopairs",
+    },
+    event = { "InsertEnter", "CmdlineEnter" },
     config = function()
         local luasnip = require("luasnip")
         local lspkind = require("lspkind")
@@ -25,13 +34,13 @@ return {
                 -- REQUIRED - 必须指定一个 snippet engine
                 expand = function(args)
                     luasnip.lsp_expand(args.body)
-                end
+                end,
             },
 
             -- 提示窗口带边框，视觉效果会更好一些
             window = {
                 completion = cmp.config.window.bordered(),
-                documentation = cmp.config.window.bordered()
+                documentation = cmp.config.window.bordered(),
             },
 
             mapping = {
@@ -40,7 +49,7 @@ return {
                         local entry = cmp.get_selected_entry()
                         if not entry then
                             cmp.select_next_item({
-                                behavior = cmp.SelectBehavior.Select
+                                behavior = cmp.SelectBehavior.Select,
                             })
                         else
                             cmp.confirm()
@@ -52,7 +61,7 @@ return {
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
+                end, { "i", "s" }),
                 ["<S-Tab>"] = cmp.mapping(function(fallback)
                     if cmp.visible() then
                         cmp.select_prev_item()
@@ -61,20 +70,20 @@ return {
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
+                end, { "i", "s" }),
                 ["<CR>"] = cmp.mapping({
                     i = function(fallback)
                         if cmp.visible() then
                             cmp.confirm({
-                                select = true
+                                select = true,
                             })
                         else
                             fallback()
                         end
                     end,
                     s = cmp.mapping.confirm({
-                        select = true
-                    })
+                        select = true,
+                    }),
                 }),
                 ["<Down>"] = cmp.mapping(function(fallback)
                     if cmp.visible() then
@@ -82,62 +91,71 @@ return {
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
+                end, { "i", "s" }),
                 ["<Up>"] = cmp.mapping(function(fallback)
                     if cmp.visible() then
                         cmp.select_prev_item()
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
+                end, { "i", "s" }),
                 ["<C-n>"] = cmp.mapping(function(fallback)
                     if cmp.visible() then
                         cmp.select_next_item()
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
+                end, { "i", "s" }),
                 ["<C-p>"] = cmp.mapping(function(fallback)
                     if cmp.visible() then
                         cmp.select_prev_item()
                     else
                         fallback()
                     end
-                end, {"i", "s"}),
-                ["<C-e>"] = cmp.mapping(cmp.mapping.abort(), {"i", "s"}),
-                ["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), {"i", "s"})
+                end, { "i", "s" }),
+                ["<C-e>"] = cmp.mapping(cmp.mapping.abort(), { "i", "s" }),
+                ["<C-Space>"] = cmp.mapping(cmp.mapping.complete(), { "i", "s" }),
             },
 
-            sources = cmp.config.sources({{
-                name = "nvim_lsp"
-            }, {
-                name = "luasnip"
-            }, {
-                name = "buffer"
-            }, {
-                name = "path"
-            }, {
-                name = "calc"
-            }, {
-                name = "copilot"
-            }
-        }),
+            sources = cmp.config.sources({
+                {
+                    name = "nvim_lsp",
+                },
+                {
+                    name = "luasnip",
+                },
+                {
+                    name = "buffer",
+                },
+                {
+                    name = "path",
+                },
+                {
+                    name = "calc",
+                },
+                {
+                    name = "copilot",
+                },
+            }),
             formatting = {
                 format = lspkind.cmp_format({
                     mode = "symbol_text", -- show only symbol annotations
                     maxwidth = 50, -- prevent the popup from showing more than provided characters (e.g 50 will not show more than 50 characters)
                     ellipsis_char = "...", -- when popup menu exceed maxwidth, the truncated part would show ellipsis_char instead (must define maxwidth first)
                     symbol_map = { Copilot = "" },
-                })
-            }
+                }),
+            },
         })
 
-        cmp.setup.filetype('gitcommit', {
-            sources = cmp.config.sources({{
-                name = 'git'
-            }, {
-                name = 'buffer'
-            }})
+        cmp.setup.filetype("gitcommit", {
+            sources = cmp.config.sources({
+                {
+                    name = "git",
+                },
+                {
+                    name = "buffer",
+                },
+            }),
         })
 
         -- 给 vim 的 : 命令提供补全
@@ -151,7 +169,7 @@ return {
                         else
                             cmp.complete()
                         end
-                    end
+                    end,
                 },
                 -- 当按下 Shift + Tab 时，选择上一个补全项
                 ["<S-Tab>"] = {
@@ -161,7 +179,7 @@ return {
                         else
                             cmp.complete()
                         end
-                    end
+                    end,
                 },
                 ["<Down>"] = {
                     c = function(fallback)
@@ -170,7 +188,7 @@ return {
                         else
                             fallback()
                         end
-                    end
+                    end,
                 },
                 ["<Up>"] = {
                     c = function(fallback)
@@ -179,24 +197,27 @@ return {
                         else
                             fallback()
                         end
-                    end
+                    end,
                 },
                 -- 当按下 Ctrl + e 时，关闭补全窗口
                 ["<C-e>"] = {
-                    c = cmp.mapping.abort()
+                    c = cmp.mapping.abort(),
                 },
                 -- 当按下回车时
                 ["<CR>"] = {
                     c = cmp.mapping.confirm({
-                        select = false
-                    })
-                }
+                        select = false,
+                    }),
+                },
             },
-            sources = cmp.config.sources({{
-                name = "path"
-            }}, {{
-                name = "cmdline"
-            }})
+            sources = cmp.config.sources(
+                { {
+                    name = "path",
+                } },
+                { {
+                    name = "cmdline",
+                } }
+            ),
         })
 
         -- Set up lspconfig.
@@ -207,5 +228,5 @@ return {
         -- require('lspconfig')['<YOUR_LSP_SERVER>'].setup {
         --     capabilities = capabilities
         -- }
-    end
+    end,
 }

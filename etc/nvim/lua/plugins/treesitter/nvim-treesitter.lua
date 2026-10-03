@@ -7,9 +7,28 @@ return {
         require("nvim-treesitter").setup()
 
         local parsers = {
-            "bash", "c", "diff", "html", "javascript", "jsdoc", "json", "lua",
-            "luadoc", "luap", "markdown", "markdown_inline", "python", "query", "regex",
-            "toml", "tsx", "typescript", "vim", "vimdoc", "xml", "yaml",
+            "bash",
+            "c",
+            "diff",
+            "html",
+            "javascript",
+            "jsdoc",
+            "json",
+            "lua",
+            "luadoc",
+            "luap",
+            "markdown",
+            "markdown_inline",
+            "python",
+            "query",
+            "regex",
+            "toml",
+            "tsx",
+            "typescript",
+            "vim",
+            "vimdoc",
+            "xml",
+            "yaml",
         }
 
         require("nvim-treesitter").install(parsers)

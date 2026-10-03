@@ -3,9 +3,14 @@
 -- Lazy plugin manager
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not vim.uv.fs_stat(lazypath) then
-    vim.fn.system(
-        {"git", "clone", "--filter=blob:none", "https://github.com/folke/lazy.nvim.git", "--branch=stable", -- latest stable release
-         lazypath})
+    vim.fn.system({
+        "git",
+        "clone",
+        "--filter=blob:none",
+        "https://github.com/folke/lazy.nvim.git",
+        "--branch=stable", -- latest stable release
+        lazypath,
+    })
 end
 
 -- Disable netrw before plugins load to avoid startup race conditions.
@@ -18,8 +23,8 @@ local lazy_opts = {
     ui = {
         border = "rounded",
         title = "Plugin Manager",
-        title_pos = "center"
-    }
+        title_pos = "center",
+    },
 }
 
 -- Lazy plugin manager

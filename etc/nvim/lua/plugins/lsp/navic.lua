@@ -1,7 +1,7 @@
 return {
     "SmiteshP/nvim-navic",
     event = "VeryLazy",
-    dependencies = {"neovim/nvim-lspconfig"},
+    dependencies = { "neovim/nvim-lspconfig" },
     config = function()
         local navic = require("nvim-navic")
         navic.setup({
@@ -31,11 +31,11 @@ return {
                 Struct = "󰌗 ",
                 Event = " ",
                 Operator = "󰆕 ",
-                TypeParameter = "󰊄 "
+                TypeParameter = "󰊄 ",
             },
             lsp = {
                 auto_attach = true,
-                preference = nil
+                preference = nil,
             },
             highlight = false,
             separator = " > ",
@@ -43,7 +43,7 @@ return {
             depth_limit_indicator = "..",
             safe_output = true,
             lazy_update_context = false,
-            click = false
+            click = false,
         })
-    end
+    end,
 }
