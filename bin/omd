@@ -1,7 +1,7 @@
 #!/bin/sh
 # Build once, then run the native binary. Rebuild only when sources change.
 set -eu
-root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 binary="$root/cache/omd/omd"
 
 if [ ! -x "$binary" ] || [ -n "$(find "$root/cmd/omd" -type f -newer "$binary" -print -quit)" ]; then

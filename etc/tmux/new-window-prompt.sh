@@ -42,7 +42,7 @@ render
 while IFS= read -rsn1 key; do
   case "$key" in
     $'\x1b')                       # ESC —— 裸 Esc 取消，方向键等转义序列忽略
-      if ! read -rsn1 -t 0.001 more; then exit 0; fi
+      if ! read -rsn1 -t 0.001 _; then exit 0; fi
       read -rsn3 -t 0.001 _ ;;
     ''|$'\n'|$'\r') break ;;       # Enter → 建窗口
     $'\x03') name=""; render ;;    # Ctrl-C → 清空输入
