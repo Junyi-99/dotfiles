@@ -41,9 +41,9 @@ bindkey '^[[A' up-line-or-search      # Up arrow: history search
 bindkey '^[[B' down-line-or-search    # Down arrow: history search
 
 # --- PATH ---
-export PATH=$HOME/bin:/usr/local/bin:$PATH
-
-# node is managed by nvm (lazy-loaded in ~/.zshrc)
+# Keep the repo's bin first so its launchers win over system copies.
+typeset -U path
+path=("$USER_BIN_HOME" "$HOME/bin" $path /usr/local/bin)
 
 # --- omd: load the generated environment; install explicitly with `omd` ---
 if [ ! -f "${XDG_CONFIG_HOME}/omd/packages.conf" ]; then
