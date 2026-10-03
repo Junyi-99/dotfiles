@@ -27,20 +27,25 @@ extract() {
     fi
 }
 
+# Show a random tip from etc/fortunes once a day. The file uses fortune's
+# %-separated format, but is read directly so fortune/strfile are not needed.
 function print_greetings() {
-    export FORTUNE_FILE="${XDG_CONFIG_HOME}/fortunes/ubuntu-server-tips"
-    if command -v fortune &>/dev/null; then
-        if command -v cowsay &>/dev/null; then
-            if command -v lolcat &>/dev/null; then
-                # fortune | cowsay | lolcat
-                cowsay -t "$(fortune)" | lolcat
-            else
-                cowsay -t "$(fortune)"
-            fi
-        else
-            : # pass
-        fi
+    local tips="${XDG_CONFIG_HOME}/fortunes/ubuntu-server-tips"
+    local stamp
+    stamp="${XDG_CACHE_HOME}/.greeting-$(date +%Y%m%d)"
+    if [ ! -f "$tips" ] || ! command -v cowsay &>/dev/null || [ -f "$stamp" ]; then
+        return 0
+    fi
+    find "${XDG_CACHE_HOME}" -maxdepth 1 -name '.greeting-*' -delete 2>/dev/null
+    touch "$stamp"
+
+    local tip
+    tip=$(awk -v RS='%' -v seed="$RANDOM" '
+        { gsub(/^\n+|\n+$/, ""); if ($0 != "") tips[++n] = $0 }
+        END { srand(seed); if (n) print tips[int(rand() * n) + 1] }' "$tips")
+    if command -v lolcat &>/dev/null; then
+        cowsay -t "$tip" | lolcat
     else
-        : # fortune not installed, skip greeting
+        cowsay -t "$tip"
     fi
 }
