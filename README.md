@@ -71,7 +71,7 @@ omd
 ## omd
 
 The native TUI uses Go 1.27.1, Bubble Tea v2.0.10, and Lip Gloss v2.0.6.
-`go.mod` and `go.sum` pin the toolchain requirement and dependency versions.
+`cmd/omd/go.mod` and `cmd/omd/go.sum` pin the toolchain requirement and dependency versions.
 The launcher builds into `cache/omd/omd` on first use and when Go sources change.
 The Go toolchain and modules are downloaded automatically on the first build;
 later launches use the cached binary. Shell startup loads `etc/omd/env.sh` and

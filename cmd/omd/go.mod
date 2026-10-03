@@ -1,4 +1,4 @@
-module github.com/Junyi-99/dotfiles
+module github.com/Junyi-99/dotfiles/cmd/omd
 
 go 1.27.1
 
